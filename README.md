@@ -40,8 +40,13 @@ plots, and are referenced where more appropriate.
 -----
 
 Each of the following vinettes is rendered in HTML. To visualise them
-you can either download the repository and open it locally; the links
-below [use a preview website](https://htmlpreview.github.io/).
+correctly it is best to download the repository and open the vignettes
+locally with your browser. As an alternative, you can [use a preview
+website](https://htmlpreview.github.io/).
+
+Notice that some vignettes, for instance 6 and 7, render `DT` tables
+that are not visualised by the preview website; those vignettes should
+be opened locally on your computer.
 
 **1. [Example subclonal
 dynamics](https://caravagn.github.io/mobster/articles/Example_tumour_simulation.html).**
