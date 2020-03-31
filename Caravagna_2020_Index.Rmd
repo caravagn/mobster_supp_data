@@ -3,8 +3,7 @@ title: "MOBSTER: Supplementary data"
 author: "Giulio Caravagna"
 date: "11/03/2020"
 output: 
-  html_document:
-    theme: cosmo
+  github_document
 ---
 
 ```{r setup, include=FALSE}
