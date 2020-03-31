@@ -15,11 +15,14 @@ Giulio Caravagna
 
 -----
 
-This is the material released with the paper G.Caravagna et al.
-*Model-based tumour subclonal deconvolution.*; accepted in principle at
-Nature Genetics, 2020. You can still refer to the [biorXiv
-preprint](https://www.biorxiv.org/content/10.1101/586560v1) of the
-paper.
+This is the material released with the paper (*under review*):
+
+  - *Model-based tumor subclonal reconstruction*. Giulio Caravagna,
+    Timon Heide, Marc Williams, Luis Zapata, Daniel Nichol, Ketevan
+    Chkhaidze, William Cross, George D. Cresswell, Benjamin Werner,
+    Ahmet Acar, Chris P. Barnes, Guido Sanguinetti, Trevor A. Graham,
+    Andrea Sottoriva. bioRxiv 586560, 2019;
+    [doi:doi.org/10.1101/586560](https://doi.org/10.1101/586560)
 
 The following R packages are required to run the analyses.
 
@@ -30,6 +33,9 @@ The following R packages are required to run the analyses.
     with Binomial mixtures;
   - [CNAqc](https://caravagn.github.io/CNAqc), to integrate mutation and
     copy number data from bulk sequencing.
+
+A number of other packages are used to generate synthetic data and
+plots, and are referenced where more appropriate.
 
 -----
 

@@ -29,6 +29,8 @@ This page describes the multi-sample synthetic data used to test MOBSTER, and sh
 
 The simulations have been collected in the [simulation_2d.rds RDS object.](./simulation_2d.rds).
 
+
+
 ```{r}
 simulation_2d = readRDS("./simulation_2d.rds")
 
@@ -324,5 +326,3 @@ ggpubr::ggarrange(
     ), 
   nrow = 1)
 ```
-
-
