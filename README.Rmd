@@ -39,7 +39,7 @@ Each of  the following vinettes is rendered in HTML. To visualise them you can e
 
 **1. [Example subclonal dynamics](https://caravagn.github.io/mobster/articles/Example_tumour_simulation.html).**
 Simulated example of tumour subclonal evolution with snapshots of tumour
-dynamics at different timepoints, and MOBSTER analysis.
+dynamics at different timepoints, and MOBSTER analysis (hosted at [MOBSTER](https://caravagn.github.io/mobster) website).
 
 **2. [Simulated single-sample data analysis](./Tumor_sim_nospace/Simulated_onesample.html).**  `n = 150` cases with `0` or `1` subclone, with simulated WGS at median coverage 120x. Mutation calls are simulated without copy num data; the coverage is Poisson-distributed.
 

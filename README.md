@@ -46,7 +46,8 @@ preview website](https://htmlpreview.github.io/).
 **1. [Example subclonal
 dynamics](https://caravagn.github.io/mobster/articles/Example_tumour_simulation.html).**
 Simulated example of tumour subclonal evolution with snapshots of tumour
-dynamics at different timepoints, and MOBSTER analysis.
+dynamics at different timepoints, and MOBSTER analysis (hosted at
+[MOBSTER](https://caravagn.github.io/mobster) website).
 
 **2. [Simulated single-sample data
 analysis](./Tumor_sim_nospace/Simulated_onesample.html).** `n = 150`
