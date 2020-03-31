@@ -39,6 +39,10 @@ plots, and are referenced where more appropriate.
 
 -----
 
+Each of the following vinettes is rendered in HTML. To visualise them
+you can either download the repository and open it locally, or [use a
+preview website](https://htmlpreview.github.io/).
+
 **1. [Example subclonal
 dynamics](./Tumor_sim_example/Example_tumour_simulation.html).**
 Simulated example of tumour subclonal evolution with snapshots of tumour
