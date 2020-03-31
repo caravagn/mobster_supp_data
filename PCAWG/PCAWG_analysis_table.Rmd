@@ -1,0 +1,372 @@
+---
+title: "PCWAG analysis with MOBSTER"
+author: "Giulio Caravagna"
+date: "11/03/2020"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+```
+
+
+Table of fits run from the data released with the PCAWG (*Pan-cancer Analysis of Whole-Genomes*) cohort. These fits have been first discussed in the paper G.Caravagna et al. *Model-based tumour subclonal deconvolution.*; to appear in Nature Genetics, 2020; see the [biorXiv preprint](https://www.biorxiv.org/content/10.1101/586560v1).
+
+Table files:
+
+* [ICL analysis](PCWAG_Summary_table.csv);
+* [reICL analysis](PCWAG_Summary_table_reICL_reduced.csv).
+
+Tools and data used for this analyis:
+
+* [MOBSTER](https://caravagn.github.io/mobster), a model-based method for tumour subclonal deconvolution;
+* [BMix](https://caravagn.github.io/BMix), a Binomial mixture model for read counts clustering;
+* Data from the [PCAWG cohort](https://docs.icgc.org/pcawg/).
+
+Note that:
+
+* the tables contains the sample id (`samplename`) as of PCAWG convention, `fit` (ICL or reICL) refers to the two distinct analysis discussed in the main paper;
+* `karyotype` identifies the segments copy state of the mutations analysed; the CNA calls  are provided by PCAWG, and  `coverage`  is the average depth of the mutations in the karyotype;
+* every column starting with `PCAWG` or `BMix` refers to information generated from PCWAG or BMix analysis. 
+* all other columns refer to MOBSTER. Columns named `Mean`/ `Variance` refer to parameters of the corresponding mixture components; columns named `N` to the number of mutations in the final output; columns `pi`  to the relative proportion of mutations and columns `K`  are the number of components fit for each statistical model (`K_B` and `K_BB` in BMix are Binomial/ Beta-Binomial mixtures, with `K_Beta` the Beta components fit by MOBSTER); tail information is reported in `tail` columns.
+
+
+
+```{r, include=FALSE}
+tab = read_csv('PCWAG_Summary_table.csv') %>% select(-starts_with('rcc'), -X1, -X1_1) %>%
+  select(-purity_conf_mad, -sample) %>%
+  mutate(fit = 'ICL') %>%
+  rename(
+    PCAWG_purity = purity, 
+    PCAWG_ploidy = ploidy, 
+    PCAWG_wgd_status = wgd_status, 
+    PCAWG_wgd_uncertain = wgd_uncertain
+  )
+
+tab = tab[, order(colnames(tab))] %>%
+  select(samplename, karyotype, fit, everything()) 
+  
+# colnames(tab)[c(7:16, 21:31)] = paste0('MOBSTER_', colnames(tab)[c(7:16, 21:31)])
+colnames(tab)[c(5, 6)] = paste0('BMix_', colnames(tab)[c(5, 6)])
+
+tab = tab[, order(colnames(tab))] %>%
+  select(samplename, karyotype, fit, coverage, everything()) 
+
+tab2 = read_csv('PCWAG_Summary_table_reICL_reduced.csv') %>% select(-starts_with('rcc')) %>%
+  mutate(fit = 'reICL') 
+
+tab2 = tab2[, order(colnames(tab2))] %>%
+  select(samplename, karyotype, fit, everything()) 
+  
+# colnames(tab2)[c(4:25)] = paste0('MOBSTER_', colnames(tab2)[c(4:25)])
+
+tab2 = tab2[, order(colnames(tab2))] %>%
+  select(samplename, karyotype, fit, everything()) 
+```
+
+### First analysis (MOBSTER + BMix)
+
+This is run with `ICL` for model selection.
+
+```{r, echo=FALSE, message=F}
+library(DT)
+datatable(tab, class = 'cell-border nowrap', filter = 'top',  extensions = 'Buttons', 
+          options = list(
+            pageLength = 12, 
+            AutoWidth = T,
+            dom = 'Bfrtip',
+            buttons = c('csv', 'excel', 'pdf', 'print'),
+            scrollX = TRUE,
+            fixedColumns = TRUE
+            )
+          )
+```
+
+### Second analysis (MOBSTER)
+
+This is run with `reICL` for model selection.
+
+```{r, echo=FALSE, message=F, eval=T}
+library(DT)
+datatable(tab2, class = 'cell-border nowrap', filter = 'top',  extensions = 'Buttons', 
+          options = list(
+            pageLength = 12, 
+            AutoWidth = T,
+            dom = 'Bfrtip',
+            buttons = c('csv', 'excel', 'pdf', 'print'),
+            scrollX = TRUE,
+            fixedColumns = TRUE
+            )
+          )
+```
+
+
+### Plots
+
+We create some of the plots released in the paper, plus some other example visualisations of the results of one of the two analysis. 
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+
+# We use results from PCWAG_Summary_table.csv
+results = readr::read_csv(file = 'PCWAG_Summary_table.csv', col_types = readr::cols())
+
+# Reshape the data to have some nicer names etc
+results = results %>% mutate(tail = ifelse(tail, "With tail", "Without tail"))
+results$tail = factor(results$tail, levels = c("With tail", "Without tail"))
+
+# Cohort statistics (purity, coverage and burden)
+MEDIAN_PURITY = median(results$purity)
+MEDIAN_COVERAGE = median(results$coverage)
+
+MB = quantile(results$N, .8)
+```
+
+Mutational burden of tail mutations, split by type of fit.
+
+```{r, fig.width = 3, fig.height=4, warning=FALSE, message=FALSE}
+results %>%
+  filter(N < MB) %>%
+  group_by(tail) %>%
+  mutate(xn = round(purity, 3),
+         yn = round(N / max(N), 3)) %>%
+  distinct(xn, yn, .keep_all = TRUE) %>%
+  ungroup %>%
+  ggplot(aes(y = yn, x = xn, color = tail)) +
+  stat_density2d(
+    alpha = .8,
+    size = .5,
+    color = 'black') +
+  geom_point(size = 1, alpha = .6) +
+  facet_wrap( ~ tail, nrow = 2) +
+  mobster:::my_ggplot_theme() +
+  guides(color = FALSE, fill = FALSE) +
+  labs(
+    x = 'Purity (PCWAG)',
+    caption = paste0('MB normalised to maximum, n = ', max(results$N), '.'),
+    y = paste0('Mutation burden (MB, %)')
+  ) +
+  scale_color_manual(values = c(`With tail` = 'indianred3', `Without tail` = 'steelblue')) 
+```
+
+We can plot the scatterplot that appears in the main text of the paper.
+
+```{r, fig.width = 6, fig.height=4.5, warning=FALSE, message=FALSE}
+scatter_cohort = ggplot(results,
+       aes(
+         x = purity,
+         y = coverage,
+         color = tail,
+         size = pi_Tail
+       )) +
+  geom_point(alpha = .7) +
+  stat_density2d(
+    data = results,
+    aes(x = purity, y = coverage, linetype = tail),
+    alpha = .8,
+    size = .3,
+    color = 'black'
+  ) +
+  ylim(0, 150) +
+  mobster:::my_ggplot_theme() +
+  guides(
+    color = guide_legend("", nrow = 2),
+    size = guide_legend("Tail", keyheight = 0),
+    linetype = FALSE
+  ) +
+  geom_vline(
+    xintercept = MEDIAN_PURITY,
+    linetype = 'longdash',
+    size = .15,
+    color = 'black'
+  ) +
+  geom_hline(
+    yintercept = MEDIAN_COVERAGE,
+    linetype = 'longdash',
+    size = .15,
+    color = 'black'
+  ) +
+  labs(
+    x = 'Purity (PCWAG)',
+    y = 'Median coverage',
+    title = "Proportion of tail mutations",
+    caption = "Showing only samples with median coverage below 150x.",
+    subtitle = paste0(
+      'PCWAG (n =',
+      unique(results$samplename) %>% length(),
+      ' samples, ',
+      nrow(results),
+      ' karyotypes) with ICL'
+    )
+  ) +
+  xlim(0, 1) +
+  scale_color_manual(values = c(`With tail` = 'indianred3', `Without tail` = 'steelblue')) +
+  geom_label(
+    data = data.frame(
+      x = c(0.1, .9, .9, 0.1),
+      y = c(150, 150, 0, 0),
+      label = c("Q1", "Q2", "Q3", "Q4")
+    ),
+    aes(x = x, y = y, label = label),
+    size = 2,
+    color = 'white',
+    fill = 'black',
+    inherit.aes = F
+  ) +
+  coord_cartesian(clip = 'off')
+
+scatter_cohort %>% print
+```
+
+We can split `scatter_cohort` to show the trend by karyotype, with points showing higher coverage for increased copy states.
+
+```{r, fig.width = 10, fig.height=4, warning=FALSE, message=FALSE}
+scatter_cohort + facet_wrap(~karyotype, nrow = 1)
+```
+
+
+We can create a gird of discretised statistics, binning X and Y axis. We can computes for every bin minimum and maximum number of cases with a tail, or other summary statistics.
+```{r, warning=FALSE, message=FALSE}
+SPAN_X = 0.05
+SPAN_Y = 25
+
+# Per-bin statistics
+EG = expand.grid(x = seq(0, 1, SPAN_X),
+                 y = seq(1, 200, SPAN_Y)) %>%
+  apply(MARGIN = 1,
+        function(p) {
+          results %>% filter(purity >= p['x'],
+                             purity < p['x'] + SPAN_X,
+                             coverage >= p['y'],
+                             coverage < p['y'] + SPAN_Y) %>%
+            summarise(
+              x = p['x'],
+              y = p['y'],
+              N = n(),
+              mean_prop_Tail = mean(pi_Tail, na.rm = T),
+              median_prop_Tail = mean(pi_Tail, na.rm = T),
+              min_prop_Tail = min(pi_Tail, na.rm = T),
+              max_prop_Tail = max(pi_Tail, na.rm = T),
+              detected_Tail = sum(pi_Tail > 0, na.rm = T),
+              fequency_Tail = detected_Tail / n(),
+              mean_K = mean(K_beta, na.rm = T),
+              fequency_Subclone = sum(K_beta > 1, na.rm = T) / n()
+            )
+        })
+
+EG = Reduce(bind_rows, EG)
+```
+
+Plot a table of results from the example statistics.
+
+```{r, fig.width = 6.5, fig.height=3.5, warning=FALSE, message=FALSE}
+tb = table(results$karyotype)
+
+mycols <- c(
+  `1:0` = 'darkblue',
+  `1:1` = "forestgreen",
+  `2:0` = "#EFC000FF",
+  `2:1` = "#CD534CFF",
+  `2:2` = 'purple'
+)
+
+ggplot() +
+  mobster:::my_ggplot_theme() +
+  guides(fill = guide_colorbar("Observed probability \n(m, cases with tail) ", barwidth = 6)) +
+  labs(
+    x = 'Purity (discretisation 5%)', 
+    y = 'Median coverage (discretisation 25x)', 
+    caption = "Showing only tiles with at least n = 5 observations."
+    ) +
+  geom_tile(
+    data = EG %>%
+      mutate(
+        detected_Tail = detected_Tail / max(detected_Tail),
+        detected_Tail = ifelse(N > 5, detected_Tail, NA),
+        fequency_Tail = ifelse(N > 5, fequency_Tail, NA)
+      ),
+    aes(
+      x,
+      y,
+      fill = fequency_Tail,
+      width = 0.04,
+      height = 20
+    )
+  ) +
+  scale_x_continuous(breaks = EG$x %>% unique %>% sort,
+                     limits = c(0, 1.02)) +
+  coord_cartesian(clip = 'off') +
+  geom_text(
+    data = EG %>% filter(N > 5),
+    aes(x, y, label = N),
+    size = 2.8,
+    inherit.aes = FALSE,
+    color = 'black'
+  ) +
+  scale_fill_distiller(palette = 'Blues',
+                       direction = 1,
+                       na.value = 'gainsboro')
+```
+
+
+In the end, we can observe the  proportion of tails fit per quadrant.
+```{r, fig.width = 6, fig.height=5}
+# Cuts based on median values
+MC = median(results$coverage, na.rm = T)
+MP = median(results$purity, na.rm = T)
+
+# Classes for the plots
+results$c_coverage = cut(
+  results$coverage,
+  breaks = c(-Inf, MC, Inf),
+  labels = c("Low depth", "High depth")
+)
+results$c_purity = cut(
+  results$purity,
+  breaks = c(-Inf, MP, Inf),
+  labels = c("Low purity", "High purity")
+)
+
+results$c_coverage = factor(results$c_coverage, levels = c("High depth", "Low depth"))
+
+propo = results %>%
+  group_by(c_coverage, c_purity) %>%
+  summarise(p_tail = sum(pi_Tail > 0, na.rm = T) / n(),
+            npt = 1 - p_tail) %>%
+  arrange(p_tail) %>%
+  ungroup()
+
+propo = reshape2::melt(propo, id = c('c_coverage', 'c_purity'))
+
+propo %>%
+  group_by(c_coverage, c_purity) %>%
+  mutate(lab.ypos = cumsum(value) - 0.5 * value) %>%
+  ggplot() +
+  geom_bar(
+    aes(x = 1, y = value, fill = variable),
+    stat = 'identity',
+    width = 1,
+    color = 'white'
+  ) +
+  facet_grid(c_coverage ~ c_purity) +
+  mobster:::my_ggplot_theme() +
+  ylim(0, 1) +
+  labs(
+    y = "Cases with tail (%)",
+    x = '',
+    caption = paste0("Median dept ", MC, ' - Median purity ', MP)
+  ) +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_manual(values = c(`p_tail` = 'indianred', `npt` = 'steelblue')) +
+  coord_polar("y", start = 0) +
+  geom_text(aes(
+    y = lab.ypos,
+    x = 1,
+    label = paste0(round(value, 2) * 100, '%')
+  ), color = "white") 
+  
+```

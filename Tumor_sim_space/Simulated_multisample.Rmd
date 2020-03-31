@@ -1,0 +1,328 @@
+---
+title: 'Simulated tumours: multi-sample data'
+author: "Giulio Caravagna and Timon Heide"
+date: "12/03/2020"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message=FALSE, warning=FALSE}
+require(dplyr)
+require(ggplot2)
+require(mobster)
+```
+
+This page describes the multi-sample synthetic data used to test MOBSTER, and shows how to run the analysis on multi-region datasets.
+
+**Note.** Each of the simulated datasets has been generated using a spatial simulator that we are about the release and link through this page. 
+
+# Available cohort
+
+The simulations have been collected in the [simulation_2d.rds RDS object.](./simulation_2d.rds).
+
+```{r}
+simulation_2d = readRDS("./simulation_2d.rds")
+
+# Number of simulations
+print(length(simulation_2d))
+```
+
+We release data from `n = 15` simulated tumours with different number of subclones and biopsies; the overall set of simulations used in the paper (`n > 500`) is too large to attach (`>10GB`). 
+
+Simulations have unique ids; for instance is the same tumour (`seed = 1`) with `k = 2` clones (`1` subclone), where we simulated  different spatial sampling strategies, genrating from `n = 2` to `n = 6` biopsies.
+```{r}
+# [1] ".//multivar_2_clones_var_samples/simulation_set-1_seed-1_n-2.rds" 
+# [2] ".//multivar_2_clones_var_samples/simulation_set-1_seed-1_n-3.rds" 
+# [3] ".//multivar_2_clones_var_samples/simulation_set-1_seed-1_n-4.rds" 
+# [4] ".//multivar_2_clones_var_samples/simulation_set-1_seed-1_n-5.rds" 
+# [5] ".//multivar_2_clones_var_samples/simulation_set-1_seed-1_n-6.rds" 
+# 
+print(names(simulation_2d))
+```
+
+# Analysis of a neutral tumour
+
+We show how to fit one of the simulated cases; we begin loading the data.
+
+```{r, fig.width=5, fig.height=4, message=F, warning=F}
+# Use one case (neutral with 2 biopsies) 
+id = names(simulation_2d)[11] 
+print(id)
+
+# Plot the tumour
+simulation_2d[[id]]$plot %>% print
+
+# Get tumour data (sequencing)
+tumour = simulation_2d[[id]]$sequencing
+print(tumour)
+
+# Samples
+samples = tumour$sample %>% unique
+print(samples)
+```
+
+## MOBSTER tail detection
+
+We run MOBSTER on each VAF value above 5%, with fast setup (`auto_setup = 'FAST'`) for the tool to speed up the vignette.
+
+```{r, fig.width=6, fig.height=3, message=T, warning=F}
+fits = lapply(samples,
+       function(s)
+       {
+         tumour  %>%
+           filter(sample == s) %>%
+           spread(variable, value) %>%
+           filter(VAF > 0.05) %>%
+           mobster_fit(auto_setup = 'FAST')
+       })
+names(fits) = samples
+```
+
+
+We can visualise the fits with an in-line plot of MOBSTER fits.
+```{r, fig.width=6, fig.height=4, warning=F}
+ggpubr::ggarrange(plotlist = lapply(fits, function(x) plot(x$best)), nrow = 1) %>% print
+```
+
+We can then compute a table with all the available clustering assignments (to find tail mutations).
+```{r, fig.width=4, fig.height=4, warning=F}
+# Join clustering assignments
+myjoin = function(x, y) {
+  full_join(x, y, by = 'id')
+}
+
+assignments = lapply(names(fits), function(x){
+ D = fits[[x]]$best$data
+ colnames(D)[2:ncol(D)] = paste0(colnames(D)[2:ncol(D)], '.', x)
+ D
+})
+assignments = Reduce(myjoin, assignments)
+
+# Find tail mutations
+assignments$tail = assignments %>%
+  select(starts_with('cluster')) %>%
+  apply(
+    MARGIN = 1,
+    FUN = function(w) {
+      any(w == 'Tail', na.rm = TRUE)
+    }
+  )
+
+ggplot(assignments, aes(x = VAF.S1, y = VAF.S2, color = tail)) +
+  geom_point() +
+  mobster:::my_ggplot_theme() +
+  labs(title = id)
+```
+
+We then compute which mutations are ever clustered into a `Tail`, and remove those. We extract read counts data for non-tail mutations which we can use for Binomial mixture modelling.
+
+```{r}
+# Non-tail mutations
+non_tail = assignments %>%
+  filter(!tail) %>%
+  pull(id)
+
+# Read counts
+reads_data = lapply(samples, function(s) {
+  tumour  %>%
+    filter(sample == s) %>%
+    spread(variable, value) 
+})
+reads_data = Reduce(myjoin, reads_data)
+
+print(reads_data)
+```
+## Read-counts analysis after MOBSTER
+
+Multi-region read-counts clustering with multivariate Binomial distributions is implemented in [VIBER](https://caravagn.github.io/VIBER/index.html). 
+
+```{r, fig.width=4, fig.height=4, warning=F, message=F}
+require(VIBER)
+
+# Disable parallel run (for VIBER)
+options(easypar.parallel = FALSE)
+```
+
+This is the actual analysis, removing tails via `filter(id %in% non_tail)`.
+
+```{r, fig.width=4, fig.height=4, warning=F, message=T}
+# Depth and number reads with the variant as two lists
+dp = reads_data %>% filter(id %in% non_tail) %>% select(starts_with('DP'))
+nv = reads_data %>% filter(id %in% non_tail) %>% select(starts_with('NV'))
+
+colnames(dp) = colnames(nv) = samples
+
+# Fit and plot
+multivariate_binomial_MOBSTER = VIBER::variational_fit(
+  nv, 
+  dp, 
+  K = 5, 
+  description = id)
+
+ggpubr::ggarrange(plotlist = plot(multivariate_binomial_MOBSTER), nrow = 1)
+
+# Reduce clusters with the proposed heuristic and replot
+ggpubr::ggarrange(
+  plotlist = plot(
+    choose_clusters(multivariate_binomial_MOBSTER, dimensions_cutoff = 1)
+    ), 
+  nrow = 1)
+```
+
+## Standard read-counts analysis without MOBSTER
+
+We here use all the read data
+
+```{r, fig.width=4, fig.height=4, warning=F, message=T}
+# Depth and number reads with the variant as two lists
+dp = reads_data %>% select(starts_with('DP'))
+nv = reads_data %>% select(starts_with('NV'))
+
+colnames(dp) = colnames(nv) = samples
+
+# Fit and plot
+multivariate_binomial = VIBER::variational_fit(nv, dp, K = 5, description = id)
+ggpubr::ggarrange(plotlist = plot(multivariate_binomial), nrow = 1)
+
+# Reduce cluasters with the proposed heuristic and replot
+ggpubr::ggarrange(
+  plotlist = plot(
+    choose_clusters(multivariate_binomial, dimensions_cutoff = 1)
+    ), 
+  nrow = 1)
+```
+
+# Analysis of a tumour with one subclone
+
+We show a subclone with two boundary biopsies (that contains cells from both the ancestral and the subclonal 
+population that is expanding).
+
+```{r, fig.width=5, fig.height=4, message=F, warning=F}
+id = names(simulation_2d)[1] 
+print(id)
+
+# Plot the tumour
+simulation_2d[[id]]$plot %>% print
+
+# Get tumour data (sequencing)
+tumour = simulation_2d[[id]]$sequencing
+samples = tumour$sample %>% unique
+print(samples)
+```
+
+## MOBSTER tail detection
+
+```{r, fig.width=6, fig.height=3, message=F, warning=F=T}
+# Run MOBSTER on each VAF value above 5%, with fast setup
+fits = lapply(samples,
+       function(s)
+       {
+         tumour  %>%
+           filter(sample == s) %>%
+           spread(variable, value) %>%
+           filter(VAF > 0.05) %>%
+           mobster_fit(auto_setup = 'FAST')
+       })
+names(fits) = samples
+```
+
+
+```{r, fig.width=6, fig.height=4, warning=F}
+# MOBSTER inline plots
+ggpubr::ggarrange(plotlist = lapply(fits, function(x) plot(x$best)), nrow = 1) %>% print
+```
+
+```{r, fig.width=4, fig.height=4, warning=F}
+assignments = lapply(names(fits), function(x){
+ D = fits[[x]]$best$data
+ colnames(D)[2:ncol(D)] = paste0(colnames(D)[2:ncol(D)], '.', x)
+ D
+})
+assignments = Reduce(myjoin, assignments)
+
+# Find tail mutations
+assignments$tail = assignments %>%
+  select(starts_with('cluster')) %>%
+  apply(
+    MARGIN = 1,
+    FUN = function(w) {
+      any(w == 'Tail', na.rm = TRUE)
+    }
+  )
+
+ggplot(assignments, aes(x = VAF.S1, y = VAF.S2, color = tail)) +
+  geom_point() +
+  mobster:::my_ggplot_theme() +
+  labs(title = id)
+```
+
+## Read-counts analysis after MOBSTER
+
+```{r}
+# Non-tail mutations
+non_tail = assignments %>%
+  filter(!tail) %>%
+  pull(id)
+
+# Read counts
+reads_data = lapply(samples, function(s) {
+  tumour  %>%
+    filter(sample == s) %>%
+    spread(variable, value) 
+})
+reads_data = Reduce(myjoin, reads_data)
+```
+
+```{r, fig.width=4, fig.height=4, warning=F, message=T}
+# Depth and number reads with the variant as two lists
+dp = reads_data %>% filter(id %in% non_tail) %>% select(starts_with('DP'))
+nv = reads_data %>% filter(id %in% non_tail) %>% select(starts_with('NV'))
+
+colnames(dp) = colnames(nv) = samples
+
+# Fit and plot
+multivariate_binomial_MOBSTER = VIBER::variational_fit(
+  nv, 
+  dp, 
+  K = 5, 
+  description = id)
+
+# Reduce cluasters with the proposed heuristic and replot
+ggpubr::ggarrange(
+  plotlist = plot(
+    choose_clusters(multivariate_binomial_MOBSTER, dimensions_cutoff = 1)
+    ), 
+  nrow = 1)
+```
+
+
+## Standard read-counts analysis without MOBSTER
+
+```{r, fig.width=4, fig.height=4, warning=F, message=T}
+# Depth and number reads with the variant as two lists
+dp = reads_data %>% select(starts_with('DP'))
+nv = reads_data %>% select(starts_with('NV'))
+
+colnames(dp) = colnames(nv) = samples
+
+# Fit and plot
+multivariate_binomial = VIBER::variational_fit(nv, dp, K = 5, description = id)
+
+# Reduce cluasters with the proposed heuristic and replot
+ggpubr::ggarrange(
+  plotlist = plot(
+    choose_clusters(multivariate_binomial, dimensions_cutoff = 1)
+    ), 
+  nrow = 1)
+```
+
+

@@ -1,0 +1,78 @@
+---
+title: 'Deconvolution of WGS lung samples'
+author: "Giulio Caravagna"
+date: "12/03/2020"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message=FALSE, warning=FALSE}
+require(dplyr)
+require(mobster)
+require(BMix)
+```
+
+We describe the analysis of samples `LUFF76` and `LU4`; the calls that we used are freely available at the [COALA](http://genome.kaist.ac.kr/), *Comprehensive Omics Archive of Lung Adenocarcinoma*, database. 
+
+We have included the results from our analysis of these samples as data released with [MOBSTER](https://caravagn.github.io/mobster).
+
+This page describes the analysis of one of the two samples; the analysis of any other lung sample presented in the text is carried out exactly in the same way. The analysis of the other breast cancer and AML cases is also done in the same way, but those calls you are required to collect the data from the original papers due to copyright issues. 
+
+
+```{r, fig.width=6, fig.height=4, warning=FALSE}
+# Fit object
+LU4_fit = mobster::LU4_lung_sample
+
+# print and plot
+print(LU4_fit$best)
+plot(LU4_fit$best)
+```
+
+Re-analysis.
+
+```{r, fig.width=6, fig.height=4}
+# Input data is inside the fit object
+lung_input = mobster::LU4_lung_sample$best$data
+
+print(lung_input)
+
+# fit by MOBSTER
+fit = mobster_fit(lung_input, auto_setup = 'FAST')
+
+# Print and plot the fit
+print(fit$best)
+plot(fit$best)
+```
+
+Downstram read counts based analysis with [BMix](https://caravagn.github.io/BMix/).
+```{r, fig.width=6, fig.height=4, warning=FALSE}
+
+# Non-tail mutations
+non_tail_mutations = mobster::Clusters(fit$best) %>% filter(cluster != "Tail")
+
+print(non_tail_mutations)
+
+# DP is t_alt_count + t_ref_count; NV is t_alt_count
+DP = non_tail_mutations %>% select(DP)
+NV = non_tail_mutations %>% select(t_alt_count)
+
+colnames(DP) = colnames(NV) = "SAMPLE"
+
+# fit by BMix
+rfit = bmixfit(cbind(NV, DP))
+
+# Print and plot the fit
+print(rfit)
+BMix::plot_clusters(rfit, data = cbind(NV, DP))
+```
+

@@ -1,0 +1,57 @@
+---
+title: "GBM longitudinal analysis with MOBSTER"
+author: "Giulio Caravagna"
+date: "11/03/2020"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+```
+
+
+Table of fits for the glioblastoma (GBM) cohort published in:
+
+* [Körber, et al. *"Evolutionary trajectories of IDHWT glioblastomas reveal a common path of early tumorigenesis instigated years ahead of initial diagnosis."* Cancer Cell 35.4 (2019): 692-704.](https://www.sciencedirect.com/science/article/abs/pii/S1535610819301023). 
+
+
+Table files:
+
+* [Summary analysis](Summary_GBM.tsv);
+
+Tools and data used for this analyis:
+
+* [MOBSTER](https://caravagn.github.io/mobster), a model-based method for tumour subclonal deconvolution;
+* [BMix](https://caravagn.github.io/BMix), a Binomial mixture model for read counts clustering;
+* Data provided by the authors of [PCAWG cohort](https://docs.icgc.org/pcawg/).
+
+Note that:
+
+* the tables contains the sample id (`case`), `type` refers to the two longitudinal samples available;
+* `karyotype` identifies the segments copy state of the mutations analysed; the CNA calls  are provided by the authors;
+* `K_beta` refers to information generated from  BMix analysis. 
+* all other columns refer to MOBSTER. Columns named `Mean`/ `Variance` refer to parameters of the corresponding mixture components; columns named `N` to the number of mutations in the final output; columns `pi`  to the relative proportion of mutations and columns `K`  are the number of components fit for each statistical model (`K_B` and `K_BB` in BMix are Binomial/ Beta-Binomial mixtures, with `K_Beta` the Beta components fit by MOBSTER); tail information is reported in `tail` columns.
+
+
+
+```{r, echo=FALSE, message=F,warning=FALSE}
+library(DT)
+
+datatable(
+  read_csv('Summary_GBM.csv'),
+  class = 'cell-border nowrap',
+  filter = 'top',
+  extensions = 'Buttons',
+  options = list(
+    pageLength = 12,
+    AutoWidth = T,
+    dom = 'Bfrtip',
+    buttons = c('csv', 'excel', 'pdf', 'print'),
+    scrollX = TRUE,
+    fixedColumns = TRUE
+  )
+)
+```

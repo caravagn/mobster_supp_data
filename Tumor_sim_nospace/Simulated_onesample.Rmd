@@ -1,0 +1,113 @@
+---
+title: 'Simulated tumours: single-sample data'
+author: "Giulio Caravagna and Timon Heide"
+date: "12/03/2020"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message=FALSE, warning=FALSE}
+require(dplyr)
+require(mobster)
+```
+
+This page describes the single-sample synthetic data used to test [MOBSTER](https://caravagn.github.io/mobster), where we fixed the simulated tumour sequencing (120x) and purity (100%). Some of these tumours are monoclonal neutral (0 subclones), others have 1 subclone, as discussed in the paper. 
+
+The simulations have been collected in an [RDS object](./asymmetric_branching_simulations_batch1.1.rds), for conveniency. A [similar dataset](./asymetric_branching_simulations_batch1.1_variable_depth.rds) is released containing simulations with varying sequencing coverage.
+
+**Note.** Data have been generated using the Tumour Emulator [TEMULATOR](https://t-heide.github.io/TEMULATOR) package developed by [Timon Heide](https://github.com/T-Heide) at the [Sottoriva Lab](http://www.sottorivalab.org/). See the simulator webpage to learn how to generate new sequencing data using a Markov model of stochastic tumour growth.
+
+```{r}
+simulations = readRDS("./asymmetric_branching_simulations_batch1.1.rds")
+```
+
+# Available cohort
+
+```{r}
+# Number of simulations
+print(length(simulations))
+
+# Simulation ids
+print(names(simulations) %>% head)
+```
+
+# Analysis (example case)
+
+We show how to fit one of the simulated cases, tumour `dcf11bece430ee3a98cc76ff0d91d2c67448258d`.
+
+```{r, fig.width=6, fig.height=3}
+id = 'dcf11bece430ee3a98cc76ff0d91d2c67448258d'
+
+# Simulation data
+tumour = simulations[[id]]
+
+# The data structure contains different type of information
+print(tumour)
+```
+Sequencing data  - see [TEMULATOR](https://t-heide.github.io/TEMULATOR) for details -  is in the format suitable for MOBSTER analysis. 
+
+We here fit the model with the fast setup of MOBSTER (`auto_setup = 'FAST'`).
+
+```{r, fig.width=6, fig.height=3, warning=F}
+data = tumour$sequencing
+head(data) %>% print
+
+# fit by MOBSTER
+fit = mobster_fit(data, auto_setup = 'FAST')
+
+# Print and plot the fit
+print(fit$best)
+```
+
+We can plot the fit.
+
+```{r, fig.width=6, fig.height=4}
+plot(fit$best)
+```
+
+The simulated tumour (its parameters, architecture etc) is stored in the object. In our tests, we consider detectable only clones that have >2.5% CCF (which corresponds to 5% VAF since we do not have copy number events); we also add explicitely the clonal cluster peak, because that is not recorded in the simulation of the initial clonal expansion.
+
+```{r}
+clone_peaks = round(tumour$cell_counts['fractions', 3:ncol(tumour$cell_counts)], 3)
+clone_peaks = clone_peaks[clone_peaks > 0.05]
+
+clone_peaks = c(clone_peaks, 0.5)
+
+print(clone_peaks)
+```
+
+You can conclude that the subclone in this tumour has swept through almost completely (~45% VAF); the fits reports indeed one major clonal expansion (no evidence of ongoing subclonal selection, 1 Beta component).
+
+### A polyclonal tumour (with a detectable subclone expanding)
+
+This  example instead shows a clear sign of an ongoing subclonal selection.
+```{r, fig.width=6, fig.height=4, message=FALSE, warning=FALSE}
+id = "9583d8ac804182ed719509e00a1d1d07630a910f"
+
+# fit by MOBSTER
+fit = mobster_fit(simulations[[id]]$sequencing, auto_setup = 'FAST')
+plot(fit$best)
+
+```
+
+The simulated CCF for the subclone is correctly identified
+```{r}
+round(
+  simulations[[id]]$cell_counts[
+    'fractions', 
+    3:ncol(simulations[[id]]$cell_counts)
+    ], 
+  3) %>%
+  print
+
+print(fit$best)
+```
