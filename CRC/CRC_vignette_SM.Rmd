@@ -1,0 +1,253 @@
+---
+title: 'Supplementary images for multi-region WGS colorectal samples'
+author: "Giulio Caravagna"
+date: "12/03/2020"
+output:
+  html_document:
+    theme: cosmo
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Supplementary Figures for the  paper have been generated with scripts similar to these, and some manual post-processing.
+
+```{r, warning=F, message=F}
+require(CNAqc)
+require(mobster)
+require(VIBER)
+require(dplyr)
+
+source('auxiliary_functions.R', verbose = FALSE)
+```
+
+# Set06 plots
+
+Load the data required for the plots.
+
+```{r, warning=F, message=T}
+# Set6 - prepare data as in the analysis vignette
+Set6_samples = paste0('Set6_', c(42, 44, 45:48))
+Set6_purity = pio:::nmfy(Set6_samples, c(0.66, 0.72, 0.80, 0.80, 0.80, 0.80))
+Set6_mutations = read_csv('./data/Set6_mutations.csv')
+Set6_CNA = read_csv('./data/Set6_cna.csv')
+
+# CNA mapping
+Set6_CNAqc_objects = lapply(
+  seq(Set6_samples),
+  map_calls,
+  CNA_calls = Set6_CNA,
+  mutation_calls = Set6_mutations,
+  samples = Set6_samples,
+  purities = Set6_purity
+)
+names(Set6_CNAqc_objects) = Set6_samples
+
+# Fits
+Set6_mobster_fits = readRDS("./Set6/Set6_mobster_fits.rds")
+Set6_mobster_viber_fit = readRDS("./Set6/Set6_mobster_viber_fit.rds")
+Set6_mobster_viber_fit_heuristics = readRDS("./Set6/Set6_mobster_viber_fit_heuristics.rds")
+Set6_standard_fit = readRDS("./Set6/Set6_standard_fit.rds")
+Set6_standard_fit_heuristics = readRDS("./Set6/Set6_standard_fit_heuristics.rds")
+```
+
+## Copy Number plots (circular).
+
+```{r, fig.height=10, fig.width=10, warning=F, message=F, echo=T}
+plot_cna = lapply(Set6_samples, 
+       function(x) 
+         CNAqc::plot_segments(
+           Set6_CNAqc_objects[[x]], 
+           circular = TRUE) +
+           labs(title = paste0(x, " CNA segments (all)"))
+       )
+
+ggpubr::ggarrange(plotlist = plot_cna)
+```
+
+## Mutation data (VAF and coverage).
+
+```{r, fig.height=9, fig.width=10, warning=F, message=F, echo=T}
+muts = Reduce(bind_rows, 
+              lapply(
+                Set6_mobster_fits %>% names, 
+                function(x) Set6_mobster_fits[[x]]$data %>% mutate(sample = x))
+              )
+
+p1 = ggplot(muts, aes(VAF, fill = sample)) +
+  geom_histogram(binwidth = 0.01) +
+  xlim(0, 1) +
+  facet_wrap( ~ sample, nrow = 1) +
+  mobster:::my_ggplot_theme() +
+  ggthemes::scale_fill_ptol() +
+  labs(title = "VAF diploid mutations")
+
+p2 = ggplot(muts, aes(DP, fill = sample)) +
+  geom_histogram(bins = 100) +
+  scale_x_log10() +
+  facet_wrap( ~ sample, nrow = 1) +
+  mobster:::my_ggplot_theme() +
+  ggthemes::scale_fill_ptol() +
+  labs(title = "Coverage diploid mutations")
+
+p3 = ggplot(muts, aes(x = DP, y = VAF, color = sample)) +
+  geom_point(size = .3, alpha = .5) +
+  scale_x_log10() +
+  facet_wrap( ~ sample, nrow = 1) +
+  mobster:::my_ggplot_theme() +
+  ggthemes::scale_color_ptol() +
+  labs(title = "VAF vs coverage diploid mutations") 
+
+ggpubr::ggarrange(p1, p2, p3, nrow = 3, ncol = 1)
+```
+
+## Clusters 
+
+
+Plot of clusters' points stats, which we use to identify clusters of potential interests.
+
+In left, the proportion of points per cluster that have VAF > 0 in a number of biopsies, which is used to understand which cluster is composed of mostly private mutations. In right, mixing proportions of the _fit_; note that the actual tumour proportion with respect to the overall mutational burden should be computed including (as normalisation constant), tail mutations here removed by MOBSTER.
+
+The first line shows the plot for the fit before the heuristic, the second the fit after.
+
+```{r, fig.height=6, fig.width=8, warning=F, message=F, echo=T}
+ggpubr::ggarrange(
+  plot_sample_occurrences(Set6_mobster_viber_fit),
+  VIBER::plot_mixing_proportions(Set6_mobster_viber_fit),
+  plot_sample_occurrences(Set6_mobster_viber_fit_heuristics),
+  VIBER::plot_mixing_proportions(Set6_mobster_viber_fit_heuristics),
+  nrow = 2, 
+  ncol = 2)
+```
+
+## Clusters mapping
+
+Mapping of clusters obtained from the analysis with MOBSTER, and without. Tail mutations removed by MOBSTER are flagged as "Missing".
+
+Mapping before the heuristic.
+
+```{r, fig.height=6, fig.width=10, warning=F, message=F, echo=T}
+plot_mapping(Set6_mutations, Set6_mobster_fits, Set6_mobster_viber_fit, Set6_standard_fit)
+```
+
+Mapping after the heuristic.
+
+```{r, fig.height=6, fig.width=10, warning=F, message=F, echo=T}
+plot_mapping(Set6_mutations, Set6_mobster_fits, Set6_mobster_viber_fit_heuristics, Set6_standard_fit_heuristics)
+```
+
+# Set07 plots
+
+As for Set06, we Load the data required for the plots.
+
+```{r, warning=F, message=T}
+Set7_samples = paste0('Set7_', c(55, 57, 59, 62))
+Set7_purity = pio:::nmfy(Set7_samples, c(.88, .88, .88, .8))
+Set7_mutations = readr::read_csv("./data/Set7_mutations.csv", col_types = readr::cols())
+Set7_CNA = readr::read_csv("./data/Set7_cna.csv", col_types = readr::cols())
+
+# CNA mapping
+Set7_CNAqc_objects = lapply(
+  seq(Set7_samples),
+  map_calls,
+  CNA_calls = Set7_CNA,
+  mutation_calls = Set7_mutations,
+  samples = Set7_samples,
+  purities = Set7_purity
+)
+names(Set7_CNAqc_objects) = Set7_samples
+
+# Fits
+Set7_mobster_fits = readRDS("./Set7/Set7_mobster_fits.rds")
+Set7_mobster_viber_fit = readRDS("./Set7/Set7_mobster_viber_fit.rds")
+Set7_mobster_viber_fit_heuristics = readRDS("./Set7/Set7_mobster_viber_fit_heuristics.rds")
+Set7_standard_fit = readRDS("./Set7/Set7_standard_fit.rds")
+Set7_standard_fit_heuristics = readRDS("./Set7/Set7_standard_fit_heuristics.rds")
+```
+
+## Copy Number plots (circular).
+
+```{r, fig.height=8, fig.width=8, warning=F, message=F, echo=T}
+plot_cna = lapply(Set7_samples, 
+       function(x) 
+         CNAqc::plot_segments(
+           Set7_CNAqc_objects[[x]], 
+           circular = TRUE) +
+           labs(title = paste0(x, " CNA segments (all)"))
+       )
+
+ggpubr::ggarrange(plotlist = plot_cna)
+```
+
+## Mutation data (VAF and coverage).
+
+```{r, fig.height=9, fig.width=8, warning=F, message=F, echo=T}
+muts = Reduce(bind_rows, 
+              lapply(
+                Set7_mobster_fits %>% names, 
+                function(x) Set7_mobster_fits[[x]]$data %>% mutate(sample = x))
+              )
+
+p1 = ggplot(muts, aes(VAF, fill = sample)) +
+  geom_histogram(binwidth = 0.01) +
+  xlim(0, 1) +
+  facet_wrap( ~ sample, nrow = 1) +
+  mobster:::my_ggplot_theme() +
+  ggthemes::scale_fill_ptol() +
+  labs(title = "VAF diploid mutations")
+
+p2 = ggplot(muts, aes(DP, fill = sample)) +
+  geom_histogram(bins = 100) +
+  scale_x_log10() +
+  facet_wrap( ~ sample, nrow = 1) +
+  mobster:::my_ggplot_theme() +
+  ggthemes::scale_fill_ptol() +
+  labs(title = "Coverage diploid mutations")
+
+p3 = ggplot(muts, aes(x = DP, y = VAF, color = sample)) +
+  geom_point(size = .3, alpha = .5) +
+  scale_x_log10() +
+  facet_wrap( ~ sample, nrow = 1) +
+  mobster:::my_ggplot_theme() +
+  ggthemes::scale_color_ptol() +
+  labs(title = "VAF vs coverage diploid mutations") 
+
+ggpubr::ggarrange(p1, p2, p3, nrow = 3, ncol = 1)
+```
+
+## Clusters
+
+Plot of clusters' points, as for Set06.
+
+```{r, fig.height=6, fig.width=8, warning=F, message=F, echo=T}
+ggpubr::ggarrange(
+  plot_sample_occurrences(Set7_mobster_viber_fit),
+  VIBER::plot_mixing_proportions(Set7_mobster_viber_fit),
+  plot_sample_occurrences(Set7_mobster_viber_fit_heuristics),
+  VIBER::plot_mixing_proportions(Set7_mobster_viber_fit_heuristics),
+  nrow = 2, 
+  ncol = 2)
+```
+
+## Clusters mapping
+
+Before the heuristic.
+
+```{r, fig.height=6, fig.width=10, warning=F, message=F, echo=T}
+plot_mapping(Set7_mutations, Set7_mobster_fits, Set7_mobster_viber_fit, Set7_standard_fit)
+```
+
+After the heuristic.
+
+```{r, fig.height=6, fig.width=7, warning=F, message=F, echo=T}
+plot_mapping(Set7_mutations, Set7_mobster_fits, Set7_mobster_viber_fit_heuristics, Set7_standard_fit_heuristics)
+```
+
+
+
+

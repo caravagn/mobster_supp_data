@@ -6,8 +6,6 @@
 # Map calls: mutations to CNA segments
 map_calls = function(CNA_calls, mutation_calls, samples, purities, sample_id)
 {
-  cli::clu
-  
   sample = samples[sample_id]
   purity = purities[sample_id]
   
@@ -167,3 +165,118 @@ squareplot = function(mobster_fits, viber_fit_bottom, viber_fit_top, samples_lis
     align = 'v'
   )
 }
+
+
+
+plot_sample_occurrences = function(x)
+{
+  clusters = x$labels %>% unique %>% unlist
+  
+  N = x$x %>% select(-cluster.Binomial)
+  D = x$y %>% select(-cluster.Binomial)
+  V = N/D
+  
+  V$counts = apply(V, 1, function(x) sum(x > 0))
+  V$cluster = x$x$cluster.Binomial
+  
+  N = V %>% group_by(cluster) %>% summarise(N = n())
+  N = pio:::nmfy(N$cluster, N$N)
+  
+  Np = N/sum(N)
+  Np = round(Np, 2) * 100
+  
+  caption = paste0('n = ', N)
+  caption = paste0(names(N), ', ', caption)
+  caption = paste0(caption, ' [', Np, '%]')
+  caption = paste0(caption, collapse = '; ')
+  
+  colors = RColorBrewer::brewer.pal(n = 9, name = 'Purples')
+  colors[1] = 'steelblue'
+  
+  Vp = V %>% 
+    group_by(cluster, counts) %>% 
+    summarise(O = n()) %>%
+    ungroup() %>%
+    mutate(perc = O/N[cluster])
+  
+  ggplot(Vp,
+         aes(x = cluster, y = perc, fill = paste(counts))
+         )+
+    geom_bar(stat = 'identity') +
+    VIBER:::my_ggplot_theme() +
+    scale_fill_manual(values = colors) +
+    labs(
+      title = "Mapping of cluster points to biopsies",
+      subtitle = caption,
+      x = "Cluster",
+      y = "Percentage of points"
+    ) +
+    guides(fill = guide_legend("Number of biopsies with VAF > 0", nrow = 1))
+  
+  
+}
+  
+# Plot cluster mapping among 2 anlyses
+plot_mapping = function(mutations, mobster_fits, with_mobster, without_mobster)
+{
+  # Add ID to each mutation
+  mutations = mutations %>%
+    mutate(id = paste(chr, from, to, ref, alt, sep = ':'))
+  
+  # Standard analysis
+  standard_analysis_assignments = 
+    pio:::nmfy(
+      mutations$id,
+      without_mobster$labels %>% unlist()
+    )
+  
+  non_tail_mutations = get_nontail_mutations(mutations, mobster_fits)
+  
+  with_mobster_analysis_assignments = 
+    pio:::nmfy(
+      non_tail_mutations$id,
+      with_mobster$labels %>% unlist()
+    )
+  
+  # All together
+  all_assignments = data.frame(
+    id = mutations$id,
+    stringsAsFactors = FALSE
+  )
+  
+  all_assignments$standard = standard_analysis_assignments[all_assignments$id]
+  all_assignments$mobster = with_mobster_analysis_assignments[all_assignments$id]
+  all_assignments$mobster[is.na(all_assignments$mobster)] = "Missing"
+  
+  all_assignments = all_assignments %>%
+    group_by(standard, mobster) %>%
+    summarise(N = n())
+  
+  colors_m = c(
+    get_cluster_colors(palettes = c("FantasticFox1"), with_mobster),
+    `Missing` = 'gray'
+  )
+  
+  colors_s = c(
+    get_cluster_colors(palettes = c('BottleRocket2', "Zissou1"), without_mobster),
+    `Missing` = 'gray'
+  )
+  
+  p1 = ggplot(all_assignments, aes(x = mobster, y = N, fill = mobster)) +
+    geom_bar(stat = 'identity') +
+    mobster:::my_ggplot_theme() +
+    facet_wrap(~standard, scales = 'free_y', nrow = 1) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_fill_manual(values = colors_m)
+  
+  p2 = ggplot(all_assignments, aes(x = standard, y = N, fill = standard)) +
+    geom_bar(stat = 'identity') +
+    mobster:::my_ggplot_theme() +
+    facet_wrap(~mobster, scales = 'free_y', nrow = 1) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_fill_manual(values = colors_s)
+  
+  ggarrange(p1, p2, nrow = 2)
+  
+}
+

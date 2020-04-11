@@ -132,7 +132,7 @@ in VIBER, to capture mixtures of Binomial distributions from non-tail SNVs.
 options(easypar.parallel = FALSE)
 
 # VIBER fit, and save RDS
-viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 2, epsilon_conv = 1e-6)
+viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 4, epsilon_conv = 1e-10, K = 5)
 
 saveRDS(viber_fit, file = "./Set7/Set7_mobster_viber_fit.rds")
 
@@ -175,8 +175,8 @@ NVs = Set7_mutations %>% select(ends_with('NV'))
 
 colnames(DPs) = colnames(NVs) = Set7_samples 
 
-# VIBER fit, and save RDS
-st_viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 1, epsilon_conv = 1e-6, max_iter = 100)
+# VIBER fit, and save RDS (one run as it takes time, K = 10 is the default as we expect more clusters here)
+st_viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 1, epsilon_conv = 1e-8, max_iter = 100)
 
 saveRDS(st_viber_fit, file = "./Set7/Set7_standard_fit.rds")
 
@@ -269,7 +269,7 @@ DPs = non_tail_mutations %>% select(ends_with('DP'))
 NVs = non_tail_mutations %>% select(ends_with('NV'))
 colnames(DPs) = colnames(NVs) = Set6_samples 
 
-viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 2, epsilon_conv = 1e-6)
+viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 4, epsilon_conv = 1e-10, K = 5)
 saveRDS(viber_fit, file = "./Set6/Set6_mobster_viber_fit.rds")
 
 heuristic_fit = VIBER::choose_clusters(viber_fit, dimensions_cutoff = 1)
@@ -281,7 +281,7 @@ NVs = Set6_mutations %>% select(ends_with('NV'))
 colnames(DPs) = colnames(NVs) = Set6_samples 
 
 # VIBER fit
-st_viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 1, epsilon_conv = 1e-6, max_iter = 100)
+st_viber_fit = VIBER::variational_fit(x = NVs, y = DPs, samples = 1, epsilon_conv = 1e-8, max_iter = 100)
 saveRDS(st_viber_fit, file = "./Set6/Set6_standard_fit.rds")
 
 st_heuristic_fit = VIBER::choose_clusters(st_viber_fit, dimensions_cutoff = 1)

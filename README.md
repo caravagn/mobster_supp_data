@@ -44,9 +44,9 @@ correctly it is best to download the repository and open the vignettes
 locally with your browser. As an alternative, you can [use a preview
 website](https://htmlpreview.github.io/).
 
-Notice that some vignettes, for instance 6 and 7, render `DT` tables
-that are not visualised by the preview website; those vignettes should
-be opened locally on your computer.
+**Note** that vignettes 6 and 7, which render `DT` tables, will not be
+rendered by the preview website, and therefore should be opened locally
+on your computer.
 
 **1. [Example subclonal
 dynamics](https://caravagn.github.io/mobster/articles/Example_tumour_simulation.html).**
@@ -76,11 +76,13 @@ used also to re-analyse the breast and AML case samples that we discuss
 in the paper (see the papers for data availability).
 
 **5. [Multi-region cross-sectional colorectal
-caricnomas](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette.html).**
+carcinomas](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette.html).**
 2 colorectal cancer cases with multiple biopsies each, with WGS at
 median coverage ~100x. These are new data first released with this
 paper. Code in this vignette can be used also to replicate the results
-that we discuss in the paper.
+that we discuss in the paper; a further vignette is available to
+[replicate Supplementary
+Figures](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette_SM.html).
 
 **6. [PCAWG
 analysis](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/PCAWG/PCAWG_analysis_table.html).**
