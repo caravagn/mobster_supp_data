@@ -81,8 +81,8 @@ carcinomas](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_su
 median coverage ~100x. These are new data first released with this
 paper. Code in this vignette can be used also to replicate the results
 that we discuss in the paper; a further vignette is available to
-[replicate Supplementary
-Figures](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette_SM.html).
+[replicate Supplementary Figures and other
+analyses](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette_SM.html).
 
 **6. [PCAWG
 analysis](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/PCAWG/PCAWG_analysis_table.html).**

@@ -1,5 +1,5 @@
 ---
-title: 'Supplementary images for multi-region WGS colorectal samples'
+title: 'Supplementary Figures for multi-region WGS colorectal samples'
 author: "Giulio Caravagna"
 date: "12/03/2020"
 output:
@@ -38,15 +38,7 @@ Set6_mutations = read_csv('./data/Set6_mutations.csv')
 Set6_CNA = read_csv('./data/Set6_cna.csv')
 
 # CNA mapping
-Set6_CNAqc_objects = lapply(
-  seq(Set6_samples),
-  map_calls,
-  CNA_calls = Set6_CNA,
-  mutation_calls = Set6_mutations,
-  samples = Set6_samples,
-  purities = Set6_purity
-)
-names(Set6_CNAqc_objects) = Set6_samples
+Set6_CNAqc_objects = readRDS("./Set6/Set6_mapped_calls.rds")
 
 # Fits
 Set6_mobster_fits = readRDS("./Set6/Set6_mobster_fits.rds")
@@ -152,15 +144,7 @@ Set7_mutations = readr::read_csv("./data/Set7_mutations.csv", col_types = readr:
 Set7_CNA = readr::read_csv("./data/Set7_cna.csv", col_types = readr::cols())
 
 # CNA mapping
-Set7_CNAqc_objects = lapply(
-  seq(Set7_samples),
-  map_calls,
-  CNA_calls = Set7_CNA,
-  mutation_calls = Set7_mutations,
-  samples = Set7_samples,
-  purities = Set7_purity
-)
-names(Set7_CNAqc_objects) = Set7_samples
+Set7_CNAqc_objects = readRDS("./Set7/Set7_mapped_calls.rds")
 
 # Fits
 Set7_mobster_fits = readRDS("./Set7/Set7_mobster_fits.rds")
@@ -248,6 +232,44 @@ After the heuristic.
 plot_mapping(Set7_mutations, Set7_mobster_fits, Set7_mobster_viber_fit_heuristics, Set7_standard_fit_heuristics)
 ```
 
+# dN/dS analyses
 
+Same pipeline to have a look at tail mutations, for example. 
+```{r}
+# L ~ list of mobster fitts
+pipe_dnds_tails = function(L)
+{
+  require(dndscv)
+  
+  input_dnds =
+    Reduce(bind_rows,
+           lapply(L %>% names,
+                  function(x) {
+                    L[[x]]$data %>% mutate(sampleID = paste(names(L), collapse = ', '))
+                  })) %>%
+    filter(cluster == 'Tail') %>%
+    select(chr, from, ref, alt, cluster, sampleID) %>%
+    distinct() %>%
+    rename(pos = from) %>%
+    select(sampleID, chr, pos, ref, alt) %>%
+    mutate(pos = as.integer(pos))
+
+  # hg19
+  input_dnds$chr = gsub('chr', '', input_dnds$chr)
+  
+  dndscv::dndscv(input_dnds, refdb = "hg19")
+}
+```
+
+Split patients and run
+```{r}
+# Set6
+Set6_dnds = pipe_dnds_tails(readRDS("./Set6/Set6_mobster_fits.rds"))
+print(Set6_dnds$globaldnds)
+
+# Set7
+Set7_dnds = pipe_dnds_tails(readRDS("./Set7/Set7_mobster_fits.rds"))
+print(Set7_dnds$globaldnds)
+```
 
 

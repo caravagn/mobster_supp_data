@@ -3,40 +3,42 @@
 # Auxiliary functions #
 #######################
 
-# Map calls: mutations to CNA segments
-map_calls = function(CNA_calls, mutation_calls, samples, purities, sample_id)
+# Map calls: mutations to CNA segments with CNAqc
+map_calls = function(CNA_calls, mutation_calls, samples, purities)
 {
-  sample = samples[sample_id]
-  purity = purities[sample_id]
+  mp = function(sample_id)
+  {
+    sample = samples[sample_id]
+    purity = purities[sample_id]
   
-  # Diploid segments with at least 500 SNVs
-  CNA_calls = CNA_calls %>% select(chr, from, to, starts_with(sample))
-  colnames(CNA_calls)[4:5] = c('minor', 'Major')
+    # Diploid segments with at least 500 SNVs
+    CNA_calls = CNA_calls %>% select(chr, from, to, starts_with(sample))
+    colnames(CNA_calls)[4:5] = c('minor', 'Major')
+    
+    SNV_calls = mutation_calls %>% select(chr, from, to, ref, alt, starts_with(sample), -ends_with('_N.VAF'))
+    colnames(SNV_calls)[6:8] = c('DP', 'NV', 'VAF')
+    
+    # Use CNAqc to map mutations to segments
+    init(snvs = SNV_calls, cna = CNA_calls, purity = purity)
+  }
   
-  SNV_calls = mutation_calls %>% select(chr, from, to, ref, alt, starts_with(sample), -ends_with('_N.VAF'))
-  colnames(SNV_calls)[6:8] = c('DP', 'NV', 'VAF')
-  
-  # Use CNAqc to map mutations to segments
-  init(snvs = SNV_calls, cna = CNA_calls, purity = purity)
-}
-
-# Plot CNA segments and VAF distributions 
-plot_calls = function(samples, CNA_calls, mutation_calls, purities)
-{
   CNAqc_objects = lapply(
     seq(samples),
-    map_calls,
-    CNA_calls = CNA_calls,
-    mutation_calls = mutation_calls,
-    samples = samples,
-    purities = purities
-  )
+    mp)
   names(CNAqc_objects) = samples
   
+  return(CNAqc_objects)
+}
+
+
+
+# Plot CNA segments and VAF distributions 
+plot_calls = function(CNAqc_objects)
+{
   # Comparative CNA plot
   plot_cna = CNAqc::plot_multisample_CNA(CNAqc_objects)
   
-  plot_snvs = lapply(samples,
+  plot_snvs = lapply(names(CNAqc_objects),
                      function(x) {
                        CNAqc::plot_data_histogram(CNAqc_objects[[x]]) +
                          xlim(0.05, 1) +
