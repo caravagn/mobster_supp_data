@@ -15,11 +15,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-We describe the analyses of the multi-region colorectal adenocarcinoma `Set7` (4 biopsies) and `Set6` (6 biopsies), for which we have generated new WGS sequencing data (~100x median coverage). The data - *purity, single nucleotide variants, copy number calls and clustering results* - are available in [Supplementary Table 2 (Excel)](./Supplementary_Table_S2.xlsx).
+We describe the analyses of the multi-region colorectal adenocarcinoma `Set7` (4 biopsies) and `Set6` (6 biopsies), for which we have generated new WGS sequencing data (~100x median coverage). The data - *purity, single nucleotide variants, copy number calls and clustering results* - are available in [Supplementary Table 2 (Excel)](./Supplementary_Table_S2.xlsx). Results from an equivalent analysis of these cases which is used to produce plots in the paper are available in [./data/original.zip](compressed format) reporting final clustering assignments.
 
-The data for these tumours has been first sequenced, at lower coverage, in [Cross W, et al. The evolutionary landscape of colorectal tumorigenesis. Nat Ecol Evol. 2018;2(10):1661–1672.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6152905/)
+We remark that data for these tumours has been first sequenced, at lower coverage, in [Cross W, et al. The evolutionary landscape of colorectal tumorigenesis. Nat Ecol Evol. 2018;2(10):1661–1672.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6152905/)
 
-To implement this analysis we use the following packages:
+To implement our analyses we use the following packages:
 
 * [MOBSTER](https://caravagn.github.io/mobster), to detect tails from multi-region data;
 * [VIBER](https://caravagn.github.io/VIBER), to use a multivariate Binomial mixture model on read counts;
