@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-We describe the analyses of the multi-region colorectal adenocarcinoma `Set7` (4 biopsies) and `Set6` (6 biopsies), for which we have generated new WGS sequencing data (~100x median coverage). The data - *purity, single nucleotide variants, copy number calls and clustering results* - are available in [Supplementary Table 2 (Excel)](./Supplementary_Table_S2.xlsx). Results from an equivalent analysis of these cases which is used to produce plots in the paper are available in [./data/original.zip](compressed format) reporting final clustering assignments.
+We describe the analyses of the multi-region colorectal adenocarcinoma `Set7` (4 biopsies) and `Set6` (6 biopsies), for which we have generated new WGS sequencing data (~100x median coverage). The data - *purity, single nucleotide variants, copy number calls and clustering results* - are available in [Supplementary Table 2 (Excel)](./Supplementary_Table_S2.xlsx). Results used to produce plots in the paper are available in [./data/original.zip](compressed format) reporting final clustering assignments.
 
 We remark that data for these tumours has been first sequenced, at lower coverage, in [Cross W, et al. The evolutionary landscape of colorectal tumorigenesis. Nat Ecol Evol. 2018;2(10):1661–1672.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6152905/)
 
@@ -269,20 +269,6 @@ Set6_mapped_calls = map_calls(
   samples = Set6_samples
 )
 saveRDS(Set6_mapped_calls, file = "./Set6/Set6_mapped_calls.rds")
-```
-
-```{r, echo=T, warning=FALSE, message=TRUE, fig.height=}
-# cowplot::plot_grid(
-#   plot_counts(x),
-#   plot_vaf(x, N = 10000),
-#   plot_depth(x, N = 10000),
-#   plot_segments(x) + ylim(-1, 6),
-#   align = 'v', 
-#   nrow = 4, 
-#   rel_heights = c(.15, .15, .15, .8))
-```
-
-```{r, echo=T, warning=FALSE, message=TRUE}
 
 # MOBSTER fits
 mobster_fits = fit_mobsters(Set6_mutations, Set6_samples)

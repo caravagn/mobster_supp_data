@@ -13,10 +13,12 @@ map_calls = function(CNA_calls, mutation_calls, samples, purities)
   
     # Diploid segments with at least 500 SNVs
     CNA_calls = CNA_calls %>% select(chr, from, to, starts_with(sample))
-    colnames(CNA_calls)[4:5] = c('minor', 'Major')
-    
+    colnames(CNA_calls) = gsub(pattern = sample, replacement = '', colnames(CNA_calls))
+    colnames(CNA_calls) = gsub(pattern = '\\.', replacement = '', colnames(CNA_calls))
+                               
     SNV_calls = mutation_calls %>% select(chr, from, to, ref, alt, starts_with(sample), -ends_with('_N.VAF'))
-    colnames(SNV_calls)[6:8] = c('DP', 'NV', 'VAF')
+    colnames(SNV_calls) = gsub(pattern = sample, replacement = '', colnames(SNV_calls))
+    colnames(SNV_calls) = gsub(pattern = '\\.', replacement = '', colnames(SNV_calls))
     
     # Use CNAqc to map mutations to segments
     init(snvs = SNV_calls, cna = CNA_calls, purity = purity)
@@ -70,7 +72,8 @@ fit_mobsters = function(mutations, samples)
       SNV_calls = mutations %>%
         select(chr, from, to, ref, alt, starts_with(!!x), -ends_with('_N.VAF')) 
       
-      colnames(SNV_calls)[6:8] = c('DP', 'NV', 'VAF')
+      colnames(SNV_calls) = gsub(pattern = x, replacement = '', colnames(SNV_calls))
+      colnames(SNV_calls) = gsub(pattern = '\\.', replacement = '', colnames(SNV_calls))
       
       mobster_fit(
         SNV_calls %>% filter(VAF > 0.05),
