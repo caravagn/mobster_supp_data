@@ -1,4 +1,4 @@
-MOBSTER: Supplementary data
+MOBSTER: Source Data
 ================
 Giulio Caravagna
 11/03/2020
@@ -15,14 +15,14 @@ Giulio Caravagna
 
 -----
 
-This is the material released with the paper (*under review*):
+This is the material released with the paper:
 
-  - *Model-based tumor subclonal reconstruction*. Giulio Caravagna,
-    Timon Heide, Marc Williams, Luis Zapata, Daniel Nichol, Ketevan
-    Chkhaidze, William Cross, George D. Cresswell, Benjamin Werner,
-    Ahmet Acar, Chris P. Barnes, Guido Sanguinetti, Trevor A. Graham,
-    Andrea Sottoriva. bioRxiv 586560, 2019;
-    [doi:doi.org/10.1101/586560](https://doi.org/10.1101/586560)
+  - *Subclonal reconstruction of tumors using machine learning and
+    population genetics*. Giulio Caravagna, Timon Heide, Marc Williams,
+    Luis Zapata, Daniel Nichol, Ketevan Chkhaidze, William Cross, George
+    D. Cresswell, Benjamin Werner, Ahmet Acar, Chris P. Barnes, Guido
+    Sanguinetti, Trevor A. Graham, Andrea Sottoriva. Nature Genetics,
+    2020 (to appear).
 
 The following R packages are required to run the analyses.
 
@@ -32,10 +32,11 @@ The following R packages are required to run the analyses.
     [VIBER](https://caravagn.github.io/VIBER), to model read counts data
     with Binomial mixtures;
   - [CNAqc](https://caravagn.github.io/CNAqc), to integrate mutation and
-    copy number data from bulk sequencing.
-
-A number of other packages are used to generate synthetic data and
-plots, and are referenced where more appropriate.
+    copy number data from bulk sequencing;
+  - [TEMULATOR](https://t-heide.github.io/TEMULATOR/), to simulated
+    non-spatial tumour growth dynamics;
+  - [CHESS](https://github.com/sottorivalab/CHESS.cpp), to simulated
+    spatial tumour growth dynamics;
 
 -----
 
@@ -81,8 +82,8 @@ carcinomas](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_su
 median coverage ~100x. These are new data first released with this
 paper. Code in this vignette can be used also to replicate the results
 that we discuss in the paper; a further vignette is available to
-[replicate Supplementary Figures and other
-analyses](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette_SM.html).
+[replicate Supplementary
+Figures](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/CRC/CRC_vignette_SM.html).
 
 **6. [PCAWG
 analysis](http://htmlpreview.github.io/?https://github.com/caravagn/mobster_supp_data/blob/master/PCAWG/PCAWG_analysis_table.html).**

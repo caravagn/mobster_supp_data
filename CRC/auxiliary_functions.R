@@ -13,12 +13,10 @@ map_calls = function(CNA_calls, mutation_calls, samples, purities)
   
     # Diploid segments with at least 500 SNVs
     CNA_calls = CNA_calls %>% select(chr, from, to, starts_with(sample))
-    colnames(CNA_calls) = gsub(pattern = sample, replacement = '', colnames(CNA_calls))
-    colnames(CNA_calls) = gsub(pattern = '\\.', replacement = '', colnames(CNA_calls))
-                               
+    colnames(CNA_calls)[4:5] = c('minor', 'Major')
+    
     SNV_calls = mutation_calls %>% select(chr, from, to, ref, alt, starts_with(sample), -ends_with('_N.VAF'))
-    colnames(SNV_calls) = gsub(pattern = sample, replacement = '', colnames(SNV_calls))
-    colnames(SNV_calls) = gsub(pattern = '\\.', replacement = '', colnames(SNV_calls))
+    colnames(SNV_calls)[6:8] = c('DP', 'NV', 'VAF')
     
     # Use CNAqc to map mutations to segments
     init(snvs = SNV_calls, cna = CNA_calls, purity = purity)
@@ -72,8 +70,8 @@ fit_mobsters = function(mutations, samples)
       SNV_calls = mutations %>%
         select(chr, from, to, ref, alt, starts_with(!!x), -ends_with('_N.VAF')) 
       
-      colnames(SNV_calls) = gsub(pattern = x, replacement = '', colnames(SNV_calls))
-      colnames(SNV_calls) = gsub(pattern = '\\.', replacement = '', colnames(SNV_calls))
+      colnames(SNV_calls) = gsub(pattern = x, replacement = '', x = colnames(SNV_calls))
+      colnames(SNV_calls) = gsub(pattern = '\\.', replacement = '', x = colnames(SNV_calls))
       
       mobster_fit(
         SNV_calls %>% filter(VAF > 0.05),
@@ -117,13 +115,41 @@ get_nontail_mutations = function(mutations, mobster_fits)
 }
 
 # Return a set of colors for VIBER clusters, using the wesanderson palettes
-get_cluster_colors = function(palettes, viber_fit)
+get_cluster_colors = function(viber_fit, W = 'M')
 {
   # Get 5 nice colours from the 
-  colors = sapply(palettes, wesanderson::wes_palette) %>% as.vector
+  # colors = sapply(palettes, wesanderson::wes_palette) %>% as.vector
   
-  non_zero_clusters = which((viber_fit$pi_k * viber_fit$N) %>% round > 0) %>% names
-  names(colors) = non_zero_clusters
+  require(ggsci)
+  require("scales")
+  
+  if(W == "S")
+  {
+    # nej = pal_nejm("default")(4)
+    # jco = (pal_jco("default")(3))[-1]
+    # lzo = (pal_locuszoom("default")(4))[-c(1,2,3)]
+    # igv = (pal_igv("default")(4))[-2]
+    # 
+    # # show_col(c(nej, jco, lzo, igv))
+    # colors = c(nej, jco, lzo, igv)
+    jco = (pal_jco("default")(10))
+    colors = c(jco)
+  }
+  
+  if(W == "M")
+  {
+    # str = pal_d3()(7)
+    str = wesanderson::wes_palette("Darjeeling1", 5)
+
+    # show_col(c(str))
+    colors = c(str)
+  }
+    
+    order_by_size = order(viber_fit$pi_k * viber_fit$N, decreasing = F) 
+    colors = colors[order_by_size]
+    
+    non_zero_clusters = which((viber_fit$pi_k * viber_fit$N) %>% round > 0) %>% names
+    names(colors) = non_zero_clusters
   
   colors
 }
@@ -258,12 +284,12 @@ plot_mapping = function(mutations, mobster_fits, with_mobster, without_mobster)
     summarise(N = n())
   
   colors_m = c(
-    get_cluster_colors(palettes = c("FantasticFox1"), with_mobster),
+    get_cluster_colors(W = "M", with_mobster),
     `Missing` = 'gray'
   )
   
   colors_s = c(
-    get_cluster_colors(palettes = c('BottleRocket2', "Zissou1"), without_mobster),
+    get_cluster_colors(W = "S", without_mobster),
     `Missing` = 'gray'
   )
   
@@ -284,4 +310,35 @@ plot_mapping = function(mutations, mobster_fits, with_mobster, without_mobster)
   ggarrange(p1, p2, nrow = 2)
   
 }
+
+plot_dnds = function(x,
+           mode,
+           gene_list,
+           dndscv_plot,
+           colors,
+           mask_colors = FALSE)
+  {
+    x$globaldnds %>%
+      dplyr::filter(name == 'wall') %>%
+      ggplot2::ggplot(ggplot2::aes(
+        x = name,
+        y = mle,
+        ymin = cilow,
+        ymax = cihigh
+      )) +
+      mobster:::my_ggplot_theme() +
+      facet_wrap( ~ name, nrow = 1, scales = 'free_y') +
+      ggplot2::xlab("") +
+      ggplot2::ylab("dN/dS") +
+      labs(
+        title = paste0("dN/dS values via dndscv")
+      ) +
+      ggplot2::geom_hline(yintercept = 1.0,
+                          lty = 2,
+                          size = .3) +
+      guides(color = F, fill = F) + 
+      geom_pointrange(color = 'black')
+    
+    
+  }
 

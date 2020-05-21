@@ -237,7 +237,7 @@ plot_mapping(Set7_mutations, Set7_mobster_fits, Set7_mobster_viber_fit_heuristic
 Same pipeline to have a look at tail mutations, for example. 
 ```{r}
 # L ~ list of mobster fitts
-pipe_dnds_tails = function(L)
+pipe_dnds_tails = function(L, cluster = "Tail")
 {
   require(dndscv)
   
@@ -247,7 +247,7 @@ pipe_dnds_tails = function(L)
                   function(x) {
                     L[[x]]$data %>% mutate(sampleID = paste(names(L), collapse = ', '))
                   })) %>%
-    filter(cluster == 'Tail') %>%
+    filter(cluster %in% !!cluster) %>%
     select(chr, from, ref, alt, cluster, sampleID) %>%
     distinct() %>%
     rename(pos = from) %>%
