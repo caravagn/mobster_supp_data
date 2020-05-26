@@ -9,7 +9,9 @@ Giulio Caravagna
 
 <a href="https://caravagn.github.io/mobster"><img src="https://caravagn.github.io/mobster/reference/figures/logo.png" width=77px height=91px></img></a>
 <a href="https://caravagn.github.io/VIBER"><img src="https://caravagn.github.io/VIBER/reference/figures/logo.png" width=77px height=91px></img></a>
+<a href="https://caravagn.github.io/BMix"><img src="https://caravagn.github.io/BMix/reference/figures/logo.png" width=77px height=91px></img></a>
 <a href="https://caravagn.github.io/CNAqc"><img src="https://caravagn.github.io/CNAqc/reference/figures/logo.png" width=77px height=91px></img></a>
+<a href="https://t-heide.github.io/TEMULATOR"><img src="https://t-heide.github.io/TEMULATOR/reference/figures/logo.png" width=77px height=91px></img></a>
 
 </center>
 
@@ -45,9 +47,8 @@ correctly it is best to download the repository and open the vignettes
 locally with your browser. As an alternative, you can [use a preview
 website](https://htmlpreview.github.io/).
 
-**Note** that vignettes 6 and 7, which render `DT` tables, will not be
-rendered by the preview website, and therefore should be opened locally
-on your computer.
+**Note** that vignettes 6 and 7 require `DT` tables that cannot be
+rendered by the preview website; opene the vignettes locally.
 
 **1. [Example subclonal
 dynamics](https://caravagn.github.io/mobster/articles/Example_tumour_simulation.html).**
