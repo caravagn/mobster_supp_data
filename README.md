@@ -1,7 +1,7 @@
 MOBSTER: Source Data
 ================
 Giulio Caravagna
-11/03/2020
+24/5/2020
 
 -----
 
@@ -42,13 +42,21 @@ The following R packages are required to run the analyses.
 
 -----
 
-Each of the following vinettes is rendered in HTML. To visualise them
-correctly it is best to download the repository and open the vignettes
-locally with your browser. As an alternative, you can [use a preview
+The vignettes are rendered in HTML. To visualise them correctly it is
+best to open the HTML files locally with your browser. As an
+alternative, you can [use a preview
 website](https://htmlpreview.github.io/).
 
-**Note** that vignettes 6 and 7 require `DT` tables that cannot be
-rendered by the preview website; opene the vignettes locally.
+**Note** that vignettes 6 and 7 use `DT` tables ad cannot be rendered by
+the preview website.
+
+  - [MOBSTER](https://caravagn.github.io/mobster) (version `0.1.1`)
+    installable sources are available in folder
+    `R_package`.
+
+<!-- end list -->
+
+    install.packages("./R_package/mobster_0.1.1.tar.gz, repos = NULL, type = 'sources', dependencies = TRUE)
 
 **1. [Example subclonal
 dynamics](https://caravagn.github.io/mobster/articles/Example_tumour_simulation.html).**
