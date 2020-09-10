@@ -23,8 +23,7 @@ This is the material released with the paper:
     population genetics*. Giulio Caravagna, Timon Heide, Marc Williams,
     Luis Zapata, Daniel Nichol, Ketevan Chkhaidze, William Cross, George
     D. Cresswell, Benjamin Werner, Ahmet Acar, Chris P. Barnes, Guido
-    Sanguinetti, Trevor A. Graham, Andrea Sottoriva. Nature Genetics,
-    2020 (to appear).
+    Sanguinetti, Trevor A. Graham, Andrea Sottoriva. Nature Genetics 52, 898–907 (2020).
 
 The following R packages are required to run the analyses.
 
